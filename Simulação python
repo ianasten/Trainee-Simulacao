@@ -1,0 +1,296 @@
+from math import pi
+from math import acos
+from math import sin
+from math import cos
+from math import degrees
+
+#insira valores no SI
+terramassa = 5.972*(10**24)
+ardensidade = 1.225
+viscosidadear = 1.8*10**-5
+
+def callmod (vetorx,vetory):
+	mod = (vetorx**2 + vetory**2)**0.5
+	return mod
+
+posicao = [0,0]
+atitude = [1,1]
+modposicao = callmod(posicao[0],posicao[1])
+vetorreferencia = [0,1]
+modvetorreferencia = callmod(vetorreferencia[0],vetorreferencia[1])
+velocidade = [0,0]
+modvelocidade = callmod(velocidade[0],velocidade[1])
+comprimentodahaste = 2
+q = 1/2*(ardensidade * modvelocidade**2)
+
+variacaodetempo = 0.001
+
+coifacomprimento = 2*10**-2
+#float(input('Insira o comprimento da coifa (cm) '))
+coifadiametro = 2*10**-2
+#float(input('Insira o diâmetro da coifa (cm) '))
+coifadensidade = 338
+#float(input('Insira densidade da coifa (Kg/m³) '))
+coifaespessura = 0.3*10**-2
+#float(input('Insira a espessura da coifa (cm) '))
+coifacomprimentomenor = (2*coifacomprimento*(coifadiametro/2 - coifaespessura)/coifadiametro)
+coifavolumeM = pi*coifacomprimento/3*((coifadiametro/2)**2)
+coifavolumem = pi*coifacomprimentomenor/3*((coifadiametro/2 - coifaespessura)**2)
+coifamassaM = float(coifadensidade*coifavolumeM)
+coifamassam = float(coifadensidade*coifavolumem)
+coifamassa = coifamassaM - coifamassam
+
+corpocomprimento = 5*10**-2
+#float(input('Insira o comprimento do corpo (cm) '))
+corpodiametro = coifadiametro
+corpodensidade = 338
+#float(input('Insira densidade do corpo (Kg/m³) '))
+corpoespessura = 0.3*10**-2
+#float(input('Insira a espessura do corpo (cm) '))
+corpovolumeM = float(((corpodiametro/2)**2))*corpocomprimento*pi
+corpovolumem = float(((corpodiametro/2-corpoespessura)**2))*corpocomprimento*pi
+corpomassaM = float(corpodensidade*(corpovolumeM))
+corpomassam = float(corpodensidade*(corpovolumem))
+corpomassa = corpomassaM - corpomassam
+
+aletacomprimentoraiz = 2*10**-2
+#float(input('Insira o comprimento das raiz da aletas (cm) '))
+aletacomprimentoponta = 1*10**-2
+#float(input('Insira o comprimento das ponta da aletas (cm) '))
+aletadesvio = 1*10**-2
+#float(input('Insira o desvio vertical entre a ponta e a raiz das aletas (cm) '))
+aletalargura = 1*10**-2
+#float(input('Insira a largura das aletas (cm) '))
+aletaespessura = 0.1*10**-2
+#float(input('Insira a espessura das aletas (cm) '))
+aletanumero = 3
+#float(input('Insira a quantidade de aletas '))
+aletadistanciadofundo = 0*10**-2 
+#float(input('Insira a distancia do fundo das aletas para o fundo do foguete (cm) '))
+aletadensidade = 170
+#float(input('Insira densidade das aletas (Kg/m³) '))
+aletamassa = float(aletadensidade*aletaespessura*((aletacomprimentoponta + aletacomprimentoraiz)*aletalargura/2))
+param = aletaespessura*aletadensidade
+
+componentemassa = 1
+componentedistancia = coifadiametro
+
+arearef = pi*(coifadiametro/2)**2
+
+motorcomprimento = 3*10**-2
+motordiametro = 1.2*10**-2
+motormassa = 0.026
+motorduracao = 10 
+empuxo = [0,13]
+
+foguetemassa = motormassa + coifamassa + corpomassa + aletamassa*aletanumero
+foguetecomprimento = coifacomprimento + corpocomprimento
+foguetevolume = coifavolumeM + corpovolumeM
+peso = [0,-(terramassa*foguetemassa*6.67408*10**-11)/(posicao[1] + 6.371*10**6)**2]
+momentodeinercia = pi*corpodensidade*foguetecomprimento/12*(3*(corpodiametro/2**4 - ((corpodiametro-corpoespessura)/2)**4) + foguetecomprimento**2*((corpodiametro/2)**2 - ((corpodiametro-corpoespessura)/2)**2))
+
+#M = coifamassaM m = coifamassam x = coifadiametro y = coifacomprimento h = coifacomprimentomenor
+
+def callCGcoifa (M,m,x,y,h):
+
+	CGcoifa = [0,(y*2/3*M - m*(y - h/3))/(M + m)]
+	return CGcoifa
+
+#mm = massamotor mc = massacorpo z = corpocomprimento  y = coifacomprimento k = motorcomprimento
+
+def callCGcorpomotor (mm,mc,z,y,k):
+
+	CGcorpo = [0 , z/2 + y]
+	CGmotor = [0 , y + z - k/2]
+	CGcorpomotor = [0 , (CGcorpo[1]*mc + CGmotor[1]*mm)/(mc + mm)] 
+	return CGcorpomotor
+
+#u = aletamassa X = aletadesvio L = aletalargura B = aletacomprimentoraiz b = aletacomprimentoponta d = aletadistanciadofundo
+#n = aletanumero y = coifacomprimento z = corpocomprimento
+
+def callCGaleta (u,X,L,B,b,d,n,y,z):
+
+	CGumaaleta = [0,((X*L/2*param*(2*X/3) + L*(B-X)*param*(X+(B-X)/2) + L*((b+X)-B)/2*param*(B+(b+X-B)/3))/u)+ y + z - (d + B)]
+	return CGumaaleta
+
+CGcoifa = callCGcoifa(coifamassaM, coifamassam, coifadiametro, coifacomprimento,coifacomprimentomenor)
+CGcorpomotor = callCGcorpomotor(motormassa,corpomassa,corpocomprimento, coifacomprimento,motorcomprimento)
+CGaleta = callCGaleta(aletamassa, aletadesvio, aletalargura, aletacomprimentoraiz, aletacomprimentoponta, aletadistanciadofundo,aletanumero,coifacomprimento,corpocomprimento)
+
+#a = CGcoifa b = CGcorpomotor c = CGaleta d = coifamassa e = corpomassa f = motormassa g = aletamassa h = aletanumero i = componentemassa j = componentedistancia 
+
+def callCG (a,b,c,d,e,f,g,h,i,j):
+	CG = [0, (a*d + b*(e+f) + c*g*h + i*j)/(d + e + f + g*h + i)]
+	return CG
+
+CG = callCG(CGcoifa[1],CGcorpomotor[1],CGaleta[1],coifamassa,corpomassa,motormassa,aletamassa,aletanumero,componentemassa,componentedistancia)
+
+def callCm (alpha,coifadiametro,foguetecomprimento,foguetevolume):
+	Cm = 2*sin(alpha)/(pi*coifadiametro/2**2)*(foguetecomprimento*(pi*coifadiametro**2/4) - foguetevolume)
+	return Cm
+
+def callCNalpha (arearef,diametrobase,diametrotip,alpha):
+	if alpha != 0:
+		CNalpha = ((2/arearef)*(pi*(diametrobase/2)**2-pi*(diametrotip/2)**2)*sin(alpha))/alpha
+	else:
+		CNalpha = (2/arearef)*(pi*(diametrobase/2)**2-pi*(diametrotip/2)**2)
+	return CNalpha
+
+#w = vetor1[0] x = vetor1[1] y = vetor2[0] z = vetor2[1]
+def callalpha (w,x,y,z):
+	try:
+		alpha = degrees(acos(((w*y + x*z))/(((w**2 + x**2)**0.5)*(y**2 + z**2)**0.5)))
+	except:
+		alpha = 0
+	return alpha
+
+alpha = callalpha(atitude[0],atitude[1],vetorreferencia[0],vetorreferencia[1])
+
+CNalphacoifa = callCNalpha(arearef,coifadiametro,0,alpha)
+
+CNalphacorpo = callCNalpha(arearef,corpodiametro,corpodiametro,alpha)
+
+#CD DE ESFERA, DESATUALIZADO
+def callCD (reynoldsnumero):
+	if reynoldsnumero < 1000:
+		if reynoldsnumero != 0:
+			CD = 24/reynoldsnumero
+			return CD
+		return 0
+	else:
+		CD = 0.45
+		return CD
+
+def callCPbody (bodycomprimento,bodydiametroinicial,bodydiametrofinal,bodyvolumeaparente):
+	try:
+		CPbody = (bodycomprimento*(pi*(bodydiametrofinal/2)**2) - bodyvolumeaparente)/(pi*(bodydiametrofinal/2)**2 - pi*(bodydiametroinicial/2)**2)
+	except:
+		CPbody = 0
+	return CPbody
+
+CPcoifa = callCPbody (coifacomprimento,0,coifadiametro,coifavolumeM - coifavolumem)
+
+CPcorpo = callCPbody (corpocomprimento,corpodiametro,corpodiametro,corpovolumeM - corpovolumem) + coifacomprimento
+
+#d = aletadesvio cr = aletacomprimentoraiz cp = aletacomprimentoponta
+
+def callCPaleta (d,cr,cp):
+	CPaleta = d/3*(cr + 2*cp)/(cr + cp) + 1/6*(cr**2 + cp**2 + cr*cp)/(cr + cp)
+	return CPaleta
+
+CPaleta = callCPaleta(aletadesvio,aletacomprimentoraiz,aletacomprimentoponta) + corpocomprimento + coifacomprimento - aletacomprimentoraiz
+
+def callCP (CPcoifa,CNalphacoifa,CPcorpo,CNalphacorpo,CPaleta,CNalphaaleta,aletanumero):
+	CP = [0,(CPcoifa*CNalphacoifa + CPcorpo*CNalphacorpo + CPaleta*CNalphaaleta*aletanumero)/(CNalphacoifa + CNalphacorpo + aletanumero*CNalphaaleta)]
+	return CP
+
+CNalphaaleta = 2
+
+CP = callCP(CPcoifa,CNalphacoifa,CPcorpo,CNalphacorpo,CPaleta,CNalphaaleta,aletanumero)
+
+if CP[1] < CG[1]:
+	print('Configuração instável')
+else:
+	print('Configuração estável')
+
+
+def callRey (velocidademodulo):
+	numerodereynolds = ardensidade*velocidademodulo*coifadiametro/viscosidadear
+	return numerodereynolds
+
+reynoldsnumero = callRey(modvelocidade)
+arrastomodulo = callCD(reynoldsnumero)*q*pi*(coifadiametro)**2/4
+
+#lançamento
+t = 0 
+#while posicao[1] <= comprimentodahaste:
+#	t += 1
+#	modvelocidade = (velocidade[0]**2 + velocidade[1]**2)**0.5
+#	arrasto = [(-velocidade[0]/modvelocidade)*arrastomodulo, (-velocidade[1]/modvelocidade)*arrastomodulo]
+#	aceleracao = [(empuxo[0] + peso[0] + arrasto[0])/foguetemassa , (empuxo[1] + peso[1] + arrasto[1])/foguetemassa]
+#	velocidade[0] += variacaodetempo*aceleracao[0]
+#	velocidade[1] += variacaodetempo*aceleracao[1]
+#	posicao[0] += variacaodetempo*velocidade[0]
+#	posicao[1] += variacaodetempo*velocidade[1]
+#	lancamentoduracao = t*variacaodetempo
+#	print('velocidadelançamento:',velocidade[0] , velocidade[1])
+#	print('posiçãolançamento:',posicao[0],posicao[1])
+#	print('duração do lançamento: ', lancamentoduracao, 's')
+
+#motorduracao -= lancamentoduracao
+
+#voo impulsionado
+t = 0 
+#while motorduracao >= 0:
+#	t += 1
+#	modvelocidade = (velocidade[0]**2 + velocidade[1]**2)**0.5
+#	arrasto = [(-velocidade[0]/modvelocidade)*arrastomodulo, (-velocidade[1]/modvelocidade)*arrastomodulo]
+#	aceleracao = [(empuxo[0] + peso[0] + arrasto[0])/foguetemassa , (empuxo[1] + peso[1] + arrasto[1])/foguetemassa]
+#	velocidade[0] += variacaodetempo*aceleracao[0]
+#	velocidade[1] += variacaodetempo*aceleracao[1]
+#	posicao[0] += variacaodetempo*velocidade[0]
+#	posicao[1] += variacaodetempo*velocidade[1]
+#	lancamentoduracao = t*variacaodetempo
+#	print('velocidadevooimpulsionado:',velocidade[0] , velocidade[1])
+#	print('posiçãovooimpulsionado:',posicao[0],posicao[1])
+#	print('duração do vooimpulsionado: ', vooimpulsionadoduracao, 's')
+
+#voo livre
+
+#while velocidade[1] >= 0:
+#	t += 1
+#	modvelocidade = (velocidade[0]**2 + velocidade[1]**2)**0.5
+#	arrasto = [(-velocidade[0]/modvelocidade)*arrastomodulo, (-velocidade[1]/modvelocidade)*arrastomodulo]
+#	aceleracao = [(peso[0] + arrasto[0])/foguetemassa , (peso[1] + arrasto[1])/foguetemassa]
+#	velocidade[0] += variacaodetempo*aceleracao[0]
+#	velocidade[1] += variacaodetempo*aceleracao[1]
+#	posicao[0] += variacaodetempo*velocidade[0]
+#	posicao[1] += variacaodetempo*velocidade[1]
+#	lancamentoduracao = t*variacaodetempo
+#	print('velocidadevoolivre:',velocidade[0] , velocidade[1])
+#	print('posiçãovoolivre:',posicao[0],posicao[1])
+#	print('duração do voolivre: ', voolivreduracao, 's')
+
+#queda livre
+#COMO SÓ ERA PARA SIMULAR A QUEDA LIVRE, COMECEI COM VALORES ARBITRÁRIOS, MAS SE TIRAR A SEÇÃO LANÇAMENTO DE COMENTÁRIO, ACREDITO QUE ESTÁ FUNCIONANDO CERTINHO. O LANÇAMENTO E O VOO LIVRE NÃO TÊM OS PARÂMETROS DE MOMENTO
+t = 0
+velocidade = [0,0]
+posicao = [0,10]
+
+velocidadeangular = 0
+
+while posicao[1] > 0:
+
+	t += 1
+	modvelocidade = callmod(velocidade[0],velocidade[1])
+	modatitude = callmod(atitude[0],atitude[1])
+
+#	velocidade = [velocidade[0]*atitude[0]/modatitude,velocidade[1]*atitude[1]/modatitude] SE TIRAR DE COMENTÁRIO, A VELOCIDADE VERTICAL FICA MUITO BAIXA E A SIMULAÇÃO DEMORA MUITO
+
+	if modvelocidade == 0:
+		arrasto = [0,0]
+	else:
+		arrasto = [(-velocidade[0]/modvelocidade)*arrastomodulo, (-velocidade[1]/modvelocidade)*arrastomodulo]
+
+	q = 1/2*(ardensidade * modvelocidade**2)
+
+	alpha = callalpha(atitude[0],atitude[1],velocidade[0],velocidade[1])
+	angulo = callalpha(atitude[0],atitude[1],vetorreferencia[0],vetorreferencia[1])
+	momento = callCm(alpha,coifadiametro,foguetecomprimento,foguetevolume)*q*coifadiametro
+	aceleracaoangular = momento/momentodeinercia
+	velocidadeangular += variacaodetempo*aceleracaoangular
+	angulo += variacaodetempo*velocidadeangular
+
+	atitude = [sin(angulo),cos(angulo)]
+
+	aceleracao = [(arrasto[0]+peso[0])/foguetemassa, (arrasto[1]+peso[1])/foguetemassa]
+	velocidade[0] += variacaodetempo*aceleracao[0]
+	velocidade[1] += variacaodetempo*aceleracao[1]
+	posicao[0] += variacaodetempo*velocidade[0]
+	posicao[1] += variacaodetempo*velocidade[1]
+	print('velocidade queda livre: ',velocidade[0],'m/s', velocidade[1],'m/s')
+	print('posição queda livre: ',posicao[0],'m' ,posicao[1],'m')
+	print('tempo de queda: ', t*variacaodetempo,'s')
+	print(alpha)
+
+	print(atitude)
